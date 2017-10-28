@@ -22,21 +22,21 @@ namespace BLL.Implementation
         //private readonly IAuthRepository _authRepository;
         private readonly CustomUserManager _userManager;
         //private readonly IRepository<ApplicationUser> _applicationUserRepository;
-        private readonly IRepository<CustomIdentityUser> _customIdentityUseRepository;
+        private readonly IRepository<CustomIdentityUser> _customIdentityUserRepository;
         private readonly IRepository<Client> _clientRepository;
         private readonly IRepository<RefreshToken> _refreshTokenRepository;
         private readonly IRepository<CustomRole> _customRoleRepository;
 
         public AccountService(IUnitOfWork unitOfWork, IMapper mapper,
             CustomUserManager userManager,
-            IRepository<CustomIdentityUser> customIdentityUseRepository,
+            IRepository<CustomIdentityUser> customIdentityUserRepository,
             IRepository<Client> clientRepository,
             IRepository<RefreshToken> refreshTokenRepository,
             IRepository<CustomRole> customRoleRepository) 
             : base(unitOfWork, mapper)
         {
             _userManager = userManager;
-            _customIdentityUseRepository = customIdentityUseRepository;
+            _customIdentityUserRepository = customIdentityUserRepository;
             _clientRepository = clientRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _customRoleRepository = customRoleRepository;
@@ -47,28 +47,12 @@ namespace BLL.Implementation
             ValidateModel(user);
 
             var customIdentityUser = Mapper.Map<UserForRegisterDTO, CustomIdentityUser>(user);
-            //var applicationUserEntity = Mapper.Map<UserForRegisterDTO, ApplicationUser>(user);
-
-            //userEntity.PasswordHash = Guid.NewGuid().ToString().Substring(0, 13);
-
+            
             IdentityResult result = await _userManager.CreateAsync(customIdentityUser, customIdentityUser.Password);
             
             var errors = GetErrorResult(result);
             if (errors?.Count > 0)
                 throw new ValidationFailedException(errors.Aggregate("", (current, v) => current + v + " "));
-
-            //_applicationUserRepository.Create(applicationUserEntity);
-
-            //foreach (var roleId in user.Claims)
-            //{
-            //    _customUserRoleRepository.Create(new CustomUserRole()
-            //    {
-            //        RoleId = roleId,
-            //        UserId = userEntity.Id
-            //    });
-            //}
-
-            //await _passwordManagementService.SendEmailToRenewPasswordAsync(userEntity.UserName, baseUrl);
         }
 
         public async Task ValidateClientAuthenticationAsync(OAuthValidateClientAuthenticationContext context)
@@ -163,7 +147,7 @@ namespace BLL.Implementation
         public async Task ResetPasswordAsync(int userId, string token, string newPassword)
         {
             //var user = await _userManager.FindByNameAsync(userName);
-            var user = await _customIdentityUseRepository.GetByIdAsync(userId);
+            var user = await _customIdentityUserRepository.GetByIdAsync(userId);
 
             //var r = _userManager.ResetPassword(userId, code, newPassword);//doesn't work
             if (user == null)
@@ -190,7 +174,7 @@ namespace BLL.Implementation
             user.PasswordHash = _userManager.PasswordHasher.HashPassword(newPassword);
             user.SecurityStamp = Guid.NewGuid().ToString();
 
-            _customIdentityUseRepository.Update(user);
+            _customIdentityUserRepository.Update(user);
 
             // Save the user and return the outcome.
             //await _userManager.UpdateAsync(user);//doesn't work
@@ -199,7 +183,7 @@ namespace BLL.Implementation
         public async Task ChangePasswordAsync(string userName, string oldPassword, string newPassword)
         {
             var user = await _userManager.FindByNameAsync(userName);
-            //var user = await _customIdentityUseRepository.GetByIdAsync(userId);
+            //var user = await _customIdentityUserRepository.GetByIdAsync(userId);
 
             //await _userManager.ChangePasswordAsync(userId, oldPassword, newPassword);//doesn't work
             if (user == null)
@@ -208,7 +192,7 @@ namespace BLL.Implementation
             }
 
             //if (_userManager.PasswordHasher.HashPassword(oldPassword) != user.PasswordHash)//doesn't work!
-            if (_userManager.PasswordHasher.VerifyHashedPassword(user.Password, oldPassword) != PasswordVerificationResult.Success)
+            if (_userManager.PasswordHasher.VerifyHashedPassword(user.PasswordHash, oldPassword) != PasswordVerificationResult.Success)
             {
                 throw new ValidationException("Wrong old password.");
             }
@@ -225,7 +209,7 @@ namespace BLL.Implementation
             user.PasswordHash = _userManager.PasswordHasher.HashPassword(newPassword);
             user.SecurityStamp = Guid.NewGuid().ToString();
 
-            _customIdentityUseRepository.Update(user);
+            _customIdentityUserRepository.Update(user);
 
             // Save the user and return the outcome.
             //await _userManager.UpdateAsync(user).ConfigureAwait(false);//doesn't work

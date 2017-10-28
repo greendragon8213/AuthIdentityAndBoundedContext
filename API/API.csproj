@@ -187,7 +187,9 @@
     <Compile Include="App_Start\Startup.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Handlers\ExceptionHandlingAttribute.cs" />
     <Compile Include="Models\ChangePasswordVM.cs" />
+    <Compile Include="Models\ExceptionResponse.cs" />
     <Compile Include="Models\ResetPasswordVM.cs" />
     <Compile Include="Mapper\AutoMapperAPIConfig.cs" />
     <Compile Include="Mapper\Mapper.cs" />

@@ -2,6 +2,7 @@
 using System.Net.Http.Formatting;
 using System.Reflection;
 using System.Web.Http;
+using API.Handlers;
 using Autofac.Integration.WebApi;
 using DI;
 using Newtonsoft.Json.Serialization;
@@ -29,7 +30,9 @@ namespace API
             var container = DependencyContainer.CreateContainer(Assembly.GetExecutingAssembly());
             config.DependencyResolver = new AutofacWebApiDependencyResolver(container);
 
-            //app.UseAutofacMiddleware(container);
+            //app.UseAutofacMiddleware(container);//not here!
+
+            config.Filters.Add(new ExceptionHandlingAttribute());
         }
     }
 }

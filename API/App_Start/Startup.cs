@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Web.Http;
 using API.Providers;
+using BLL.Exceptions;
 using DI;
 using Microsoft.Owin;
 using Microsoft.Owin.Security.OAuth;
@@ -53,7 +54,7 @@ namespace API
                     await n.Invoke(); //invoke next middleware (auth)
                     
                     //smth
-                    if (c.Get<bool>("UserDoesntHavePermissionException"))
+                    if (c.Get<bool>(nameof(UserDoesntHavePermissionException)))
                     {
                         var json = JsonConvert.SerializeObject(
                             new

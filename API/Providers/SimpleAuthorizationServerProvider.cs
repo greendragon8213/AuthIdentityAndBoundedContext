@@ -9,6 +9,7 @@ using BLL.Models;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Autofac.Integration.Owin;
+using BLL.Exceptions;
 
 namespace API.Providers
 {
@@ -16,19 +17,10 @@ namespace API.Providers
     {
         public override async Task ValidateClientAuthentication(OAuthValidateClientAuthenticationContext context)
         {
-            //using (var scope = GlobalConfiguration.Configuration.DependencyResolver.BeginScope())
-            //{
-            //    var accountService = scope.GetService(typeof (IAccountService)) as IAccountService;
-
             var autofacLifetimeScope = context.OwinContext.GetAutofacLifetimeScope();
             var accountService = autofacLifetimeScope.Resolve<IAccountService>();
-
-            //var accountService = (IAccountService)
-            //        GlobalConfiguration.Configuration.DependencyResolver.GetService(typeof(IAccountService));
-
-            await accountService.ValidateClientAuthenticationAsync(context);
             
-            //}
+            await accountService.ValidateClientAuthenticationAsync(context);
         }
 
         public override async Task GrantResourceOwnerCredentials(OAuthGrantResourceOwnerCredentialsContext context)
@@ -44,16 +36,16 @@ namespace API.Providers
                 //var accountService = (IAccountService)
                 //    GlobalConfiguration.Configuration.DependencyResolver.GetService(typeof(IAccountService));
                 user = await accountService.GetUserPermissionsAsync(context.UserName, context.Password);
+
+                if (user.IsDeleted)
+                {
+                    context.OwinContext.Set(nameof(UserDoesntHavePermissionException), true);
+                    return;
+                }
             }
             catch (NullReferenceException)
             {
                 context.SetError("invalid_grant", "The user name or password is incorrect.");
-                return;
-            }
-
-            if (user.IsDeleted)
-            {
-                context.OwinContext.Set("UserDoesntHavePermissionException", true);
                 return;
             }
 
@@ -88,11 +80,11 @@ namespace API.Providers
         {
             var autofacLifetimeScope = context.OwinContext.GetAutofacLifetimeScope();
             var accountService = autofacLifetimeScope.Resolve<IAccountService>();
-            //IAccountService userPermissionsService = (IAccountService)GlobalConfiguration.Configuration.DependencyResolver.GetService(typeof(IAccountService));
+            
             var userPermissions = await accountService.GetUserPermissionsAsync(context.Identity.Name);
             if (userPermissions.IsDeleted)
             {
-                context.OwinContext.Set("UserDoesntHavePermissionException", true);
+                context.OwinContext.Set(nameof(UserDoesntHavePermissionException), true);
                 return;
             }
 
